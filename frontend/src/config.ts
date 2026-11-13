@@ -18,4 +18,5 @@ export const config = {
   apiBaseUrl: resolveApiBaseUrl(),
   clientId: resolveClientId(),
   pollingIntervalMs: 3000,
+  toastTimeoutMs: 8000,
 } as const

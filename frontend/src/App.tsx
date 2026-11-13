@@ -2,11 +2,16 @@ import { BannerCarousel } from './components/BannerCarousel'
 import { Header } from './components/Header'
 import { RightPanel } from './components/RightPanel'
 import { Sidebar } from './components/Sidebar'
+import { ToastStack } from './components/ToastStack'
 import { config } from './config'
 import { useClientOffers } from './hooks/useClientOffers'
+import { useOfferToasts } from './hooks/useOfferToasts'
 
 export default function App() {
   const { offers, status, error } = useClientOffers(config.clientId)
+  const { toasts, dismissToast } = useOfferToasts(offers, {
+    ready: status === 'ready',
+  })
   const initialLoading = status === 'loading' && offers.length === 0
   const pollLabel = error
     ? 'Нет связи с API'
@@ -62,6 +67,8 @@ export default function App() {
 
         <RightPanel />
       </div>
+
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </>
   )
 }
