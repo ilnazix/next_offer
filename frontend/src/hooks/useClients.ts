@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { fetchClients } from '../api/clients'
+import { describeError, isAbortError } from '../api/http'
 import type { Client } from '../types'
 
 interface UseClientsResult {
@@ -23,8 +24,8 @@ export function useClients(): UseClientsResult {
         setClients(nextClients)
         setError(null)
       } catch (cause) {
-        if (cancelled || (cause as Error).name === 'AbortError') return
-        setError(cause instanceof Error ? cause.message : 'unknown error')
+        if (cancelled || isAbortError(cause)) return
+        setError(describeError(cause))
       }
     }
 

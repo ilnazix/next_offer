@@ -38,9 +38,5 @@ class RabbitMQPublisher:
 
 
 @lru_cache
-def _publisher() -> EventPublisher:
-    return RabbitMQPublisher(settings.rabbitmq_url)
-
-
 def get_publisher() -> EventPublisher:
-    return _publisher()
+    return RabbitMQPublisher(settings.rabbitmq_url)

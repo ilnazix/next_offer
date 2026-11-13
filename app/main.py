@@ -2,19 +2,19 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
 
 from app.api import router
 from app.config import settings
 from app.db import get_engine
-from app.health import collect_health
+from app.health import check_database, collect_health
+from app.migrations import run_schema_migrations
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: verify DB connection
-    with get_engine().connect() as conn:
-        conn.execute(text("SELECT 1"))
+    # Startup: verify DB connection and migrate existing demo volumes.
+    if check_database():
+        run_schema_migrations(get_engine())
     yield
     # Shutdown
     get_engine().dispose()

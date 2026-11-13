@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { describeError, isAbortError } from '../api/http'
 import { fetchClientOffers, submitOfferFeedback } from '../api/offers'
 import { config } from '../config'
 import type { Offer, OfferAction } from '../types'
@@ -49,9 +50,9 @@ export function useClientOffers(
         setError(null)
         setStatus('ready')
       } catch (cause) {
-        if (cancelled || (cause as Error).name === 'AbortError') return
+        if (cancelled || isAbortError(cause)) return
 
-        setError(cause instanceof Error ? cause.message : 'unknown error')
+        setError(describeError(cause))
         setStatus(hasLoaded.current ? 'ready' : 'error')
       }
     }
@@ -78,7 +79,7 @@ export function useClientOffers(
         )
         setError(null)
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'unknown error')
+        setError(describeError(cause))
       }
     },
     [],

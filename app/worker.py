@@ -11,8 +11,9 @@ from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import Basic, BasicProperties
 
 from app.config import settings
-from app.db import get_session_factory
+from app.db import get_engine, get_session_factory
 from app.messaging import EVENTS_QUEUE
+from app.migrations import run_schema_migrations
 from app.services.offers import handle_event
 
 logger = logging.getLogger(__name__)
@@ -95,6 +96,11 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     logger.info("Starting next_offer worker")
+
+    try:
+        run_schema_migrations(get_engine())
+    except Exception:
+        logger.exception("Startup schema migration failed; continuing anyway")
 
     connection = connect_with_retry(pika.URLParameters(settings.rabbitmq_url))
     stop_heartbeat = start_heartbeat()

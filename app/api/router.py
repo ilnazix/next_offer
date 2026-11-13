@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.constants import ACTIVE_OFFER_STATUSES, OfferStatus
 from app.db import get_db
 from app.messaging import EventPublisher, get_publisher
 from app.models import BannerTemplate, Client, Offer
@@ -20,8 +21,6 @@ from app.schemas import (
 )
 
 api_router = APIRouter()
-
-ACTIVE_OFFER_STATUSES = ("pending", "shown")
 
 
 @api_router.post(
@@ -64,16 +63,34 @@ def list_clients(db: Session = Depends(get_db)):
     "/clients/{client_id}/offers",
     response_model=OffersResponse,
 )
-def get_client_offers(client_id: int, db: Session = Depends(get_db)):
-    rows = db.execute(
+def get_client_offers(
+    client_id: int,
+    include_responded: bool = False,
+    db: Session = Depends(get_db),
+):
+    statement = (
         select(Offer, BannerTemplate)
         .join(BannerTemplate, Offer.banner_template_id == BannerTemplate.id)
-        .where(
-            Offer.client_id == client_id,
-            Offer.status.in_(ACTIVE_OFFER_STATUSES),
-        )
-        .order_by(Offer.created_at.desc(), Offer.id.desc())
-    ).all()
+        .where(Offer.client_id == client_id)
+    )
+    if not include_responded:
+        statement = statement.where(Offer.status.in_(ACTIVE_OFFER_STATUSES))
+    statement = statement.order_by(Offer.created_at.desc(), Offer.id.desc())
+
+    rows = db.execute(statement).all()
+
+    # Serving a pending offer is the moment it becomes visible to the client.
+    # Persist that transition so analytics and the API can distinguish
+    # offers that were actually shown from ones still waiting in the queue.
+    shown_at = datetime.now(timezone.utc)
+    changed = False
+    for offer, _template in rows:
+        if offer.status == OfferStatus.PENDING:
+            offer.status = OfferStatus.SHOWN.value
+            offer.shown_at = shown_at
+            changed = True
+    if changed:
+        db.commit()
 
     offers = [
         OfferOut(

@@ -1,16 +1,7 @@
-import { config } from '../config'
 import type { Client, ClientsResponse } from '../types'
+import { fetchJson } from './http'
 
 export async function fetchClients(signal?: AbortSignal): Promise<Client[]> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/clients`, {
-    headers: { Accept: 'application/json' },
-    signal,
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`)
-  }
-
-  const body = (await response.json()) as ClientsResponse
+  const body = await fetchJson<ClientsResponse>('/api/v1/clients', { signal })
   return Array.isArray(body?.clients) ? body.clients : []
 }

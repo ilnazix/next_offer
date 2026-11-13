@@ -1,5 +1,5 @@
 import { SIMULATOR_EVENTS } from '../events'
-import type { SimulatedEventRecord, SimulatorEvent } from '../events'
+import type { SimulatorEvent } from '../events'
 import type { Client, Offer } from '../types'
 
 interface RightPanelProps {
@@ -10,16 +10,21 @@ interface RightPanelProps {
   onSimulateEvent: (event: SimulatorEvent) => void
   pendingEventType: string | null
   eventError: string | null
-  lastEvent: SimulatedEventRecord | null
   lastOffer: Offer | null
   offerCount: number
 }
 
-function formatEventTime(record: SimulatedEventRecord): string {
-  const date = new Date(record.at)
-  return Number.isNaN(date.getTime())
-    ? record.at
-    : date.toLocaleTimeString('ru-RU')
+function formatTimestamp(value: string): string {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleTimeString('ru-RU')
+}
+
+function describeProcessedOffer(offer: Offer): string {
+  const meta = SIMULATOR_EVENTS.find((event) => event.type === offer.type)
+  const label = meta?.label ?? offer.type
+  return offer.created_at
+    ? `${label} · ${formatTimestamp(offer.created_at)}`
+    : label
 }
 
 export function RightPanel({
@@ -30,7 +35,6 @@ export function RightPanel({
   onSimulateEvent,
   pendingEventType,
   eventError,
-  lastEvent,
   lastOffer,
   offerCount,
 }: RightPanelProps) {
@@ -108,9 +112,7 @@ export function RightPanel({
           <div className="no-debug__row">
             <dt>Последнее событие</dt>
             <dd>
-              {lastEvent
-                ? `${lastEvent.label} · ${formatEventTime(lastEvent)}`
-                : '—'}
+              {lastOffer ? describeProcessedOffer(lastOffer) : '—'}
             </dd>
           </div>
           <div className="no-debug__row">

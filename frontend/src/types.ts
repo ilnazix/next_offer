@@ -1,3 +1,9 @@
+export const OFFER_ACTIONS = ['accepted', 'declined', 'dismissed'] as const
+export type OfferAction = (typeof OFFER_ACTIONS)[number]
+
+export const OFFER_STATUSES = ['pending', 'shown', ...OFFER_ACTIONS] as const
+export type OfferStatus = (typeof OFFER_STATUSES)[number]
+
 export interface Offer {
   id: number
   type: string
@@ -6,7 +12,7 @@ export interface Offer {
   background_color: string | null
   icon: string | null
   action_text: string | null
-  status: string
+  status: OfferStatus
   created_at: string | null
 }
 
@@ -28,8 +34,6 @@ export interface EventAccepted {
   event_id: string
   status: string
 }
-
-export type OfferAction = 'accepted' | 'declined' | 'dismissed'
 
 export interface FeedbackResponse {
   id: number

@@ -35,7 +35,12 @@ def test_event_becomes_offer_in_db_and_api_then_accepts_feedback(
     assert offers[0]["id"] == offer.id
     assert offers[0]["type"] == "salary"
     assert offers[0]["title"] == "Сохраните зарплату под 8%"
-    assert offers[0]["status"] == "pending"
+    assert offers[0]["status"] == "shown"
+
+    with session_factory() as db:
+        shown = db.get(Offer, offer.id)
+        assert shown is not None
+        assert shown.shown_at is not None
 
     feedback_response = client.post(
         f"/api/v1/offers/{offer.id}/feedback",

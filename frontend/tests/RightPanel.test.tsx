@@ -2,34 +2,24 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { RightPanel } from '../src/components/RightPanel'
-import type { SimulatedEventRecord } from '../src/events'
 import type { Client, Offer } from '../src/types'
+import { makeOffer } from './factories'
 
 const clients: Client[] = [
   { id: 1, full_name: 'Иван Петров' },
   { id: 2, full_name: 'Мария Смирнова' },
 ]
 
-const offer: Offer = {
+const offer = makeOffer({
   id: 7,
   type: 'purchase',
   title: 'Накопите на крупную покупку',
   subtitle: 'Откройте накопительный счёт для ремонта или отпуска',
   background_color: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
   icon: '🏠',
-  action_text: 'Открыть счёт',
-  status: 'pending',
-  created_at: null,
-}
+})
 
-const lastEvent: SimulatedEventRecord = {
-  type: 'purchase',
-  label: 'Крупная покупка −80 000 ₽',
-  eventId: 'event-1',
-  at: '2026-11-14T10:00:00+00:00',
-}
-
-function renderPanel() {
+function renderPanel(lastOffer: Offer | null = offer) {
   const onSelectClient = vi.fn()
   const onSimulateEvent = vi.fn()
 
@@ -42,8 +32,7 @@ function renderPanel() {
       onSimulateEvent={onSimulateEvent}
       pendingEventType={null}
       eventError={null}
-      lastEvent={lastEvent}
-      lastOffer={offer}
+      lastOffer={lastOffer}
       offerCount={3}
     />,
   )
@@ -82,7 +71,7 @@ describe('RightPanel event simulator', () => {
     )
   })
 
-  it('shows the offer count and the last processed event', () => {
+  it('derives the last processed event from the newest polled offer', () => {
     renderPanel()
 
     expect(screen.getByText('Офферов').nextElementSibling).toHaveTextContent('3')
@@ -91,6 +80,17 @@ describe('RightPanel event simulator', () => {
     )
     expect(screen.getByText('Последний оффер').nextElementSibling).toHaveTextContent(
       offer.title,
+    )
+  })
+
+  it('shows placeholders when no offer has been processed yet', () => {
+    renderPanel(null)
+
+    expect(screen.getByText('Последнее событие').nextElementSibling).toHaveTextContent(
+      '—',
+    )
+    expect(screen.getByText('Последний оффер').nextElementSibling).toHaveTextContent(
+      '—',
     )
   })
 })

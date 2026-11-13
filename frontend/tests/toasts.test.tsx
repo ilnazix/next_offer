@@ -3,23 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useOfferToasts } from '../src/hooks/useOfferToasts'
 import type { Offer } from '../src/types'
+import { makeOffer } from './factories'
 
-function makeOffer(id: number, title: string): Offer {
-  return {
-    id,
-    type: 'salary',
-    title,
-    subtitle: null,
-    background_color: null,
-    icon: null,
-    action_text: null,
-    status: 'pending',
-    created_at: null,
-  }
-}
-
-const first = makeOffer(1, 'Первый оффер')
-const second = makeOffer(2, 'Второй оффер')
+const first = makeOffer({ id: 1, title: 'Первый оффер', subtitle: null, background_color: null, icon: null, action_text: null })
+const second = makeOffer({ id: 2, title: 'Второй оффер', subtitle: null, background_color: null, icon: null, action_text: null })
 
 afterEach(() => {
   vi.useRealTimers()
