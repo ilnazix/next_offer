@@ -1,18 +1,20 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from sqlalchemy import text
+
 from app.api import router
-from app.db import engine
+from app.db import get_engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: verify DB connection
-    with engine.connect() as conn:
-        conn.execute("SELECT 1")
+    with get_engine().connect() as conn:
+        conn.execute(text("SELECT 1"))
     yield
     # Shutdown
-    engine.dispose()
+    get_engine().dispose()
 
 
 app = FastAPI(
