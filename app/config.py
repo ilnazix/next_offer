@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     uvicorn_host: str = "0.0.0.0"
     uvicorn_port: int = 8000
 
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()
