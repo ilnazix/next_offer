@@ -23,6 +23,10 @@ build/
 .env
 .env.local
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
 # IDEs
 .idea/
 .vscode/

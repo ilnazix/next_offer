@@ -88,3 +88,13 @@ def test_client_offers_exclude_inactive_offers(client, seeded, session):
 
     assert response.status_code == 200
     assert response.json()["offers"] == []
+
+
+def test_cors_allows_local_frontend_origin(client, seeded):
+    response = client.get(
+        f"/api/v1/clients/{seeded['client_id']}/offers",
+        headers={"Origin": "http://localhost:5173"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
