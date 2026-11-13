@@ -1,12 +1,13 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.api import router
 from app.config import settings
 from app.db import get_engine
+from app.health import collect_health
 
 
 @asynccontextmanager
@@ -38,5 +39,8 @@ app.include_router(router.api_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["health"])
-def health_check():
-    return {"status": "ok"}
+def health_check(response: Response):
+    report = collect_health()
+    if report["status"] != "ok":
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    return report

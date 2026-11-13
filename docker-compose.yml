@@ -15,7 +15,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rozochka} -d ${POSTGRES_DB:-rozochka}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -43,6 +44,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rozochka}:${POSTGRES_PASSWORD:-rozochka}@postgres:5432/${POSTGRES_DB:-rozochka}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-nextoffer}:${RABBITMQ_PASSWORD:-nextoffer}@rabbitmq:5672/
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:5173","http://127.0.0.1:5173"]}'
       UVICORN_HOST: 0.0.0.0
       UVICORN_PORT: 8000
     ports:
@@ -55,6 +57,12 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/app_healthcheck.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   worker:
@@ -66,13 +74,22 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rozochka}:${POSTGRES_PASSWORD:-rozochka}@postgres:5432/${POSTGRES_DB:-rozochka}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-nextoffer}:${RABBITMQ_PASSWORD:-nextoffer}@rabbitmq:5672/
       PYTHONUNBUFFERED: "1"
+      WORKER_HEARTBEAT_PATH: /tmp/next_offer_worker_heartbeat
+      WORKER_HEARTBEAT_MAX_AGE_SECONDS: "20"
     volumes:
       - ./app:/app/app:ro
+      - ./scripts:/app/scripts:ro
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/worker_healthcheck.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     command: python -m app.worker
 
 volumes:
