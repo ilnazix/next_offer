@@ -13,13 +13,6 @@ export interface SimulatorEvent {
   secondary?: boolean
 }
 
-export interface SimulatedEventRecord {
-  type: SimulatorEventType
-  label: string
-  eventId: string
-  at: string
-}
-
 export const SIMULATOR_EVENTS: SimulatorEvent[] = [
   {
     type: 'salary',

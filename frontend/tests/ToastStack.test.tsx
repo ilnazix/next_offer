@@ -2,19 +2,9 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ToastStack } from '../src/components/ToastStack'
-import type { Offer } from '../src/types'
+import { makeOffer } from './factories'
 
-const offer: Offer = {
-  id: 7,
-  type: 'salary',
-  title: 'Сохраните зарплату под 8%',
-  subtitle: 'Отложите часть на накопительный счёт',
-  background_color: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)',
-  icon: '💰',
-  action_text: 'Открыть счёт',
-  status: 'pending',
-  created_at: null,
-}
+const offer = makeOffer()
 
 describe('ToastStack', () => {
   it('renders nothing when there are no toasts', () => {

@@ -3,20 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useClientOffers } from '../src/hooks/useClientOffers'
 import type { Offer } from '../src/types'
-
-function makeOffer(id: number, title: string): Offer {
-  return {
-    id,
-    type: 'salary',
-    title,
-    subtitle: null,
-    background_color: null,
-    icon: null,
-    action_text: null,
-    status: 'pending',
-    created_at: null,
-  }
-}
+import { makeOffer } from './factories'
 
 function response(offers: Offer[]) {
   return {
@@ -43,8 +30,8 @@ afterEach(() => {
 
 describe('useClientOffers', () => {
   it('replaces offers on the next poll without a reload', async () => {
-    const first = makeOffer(1, 'Первый оффер')
-    const second = makeOffer(2, 'Второй оффер')
+    const first = makeOffer({ id: 1, title: 'Первый оффер' })
+    const second = makeOffer({ id: 2, title: 'Второй оффер' })
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(response([first]))

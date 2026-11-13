@@ -2,19 +2,9 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { BannerCarousel } from '../src/components/BannerCarousel'
-import type { Offer } from '../src/types'
+import { makeOffer } from './factories'
 
-const offer: Offer = {
-  id: 1,
-  type: 'salary',
-  title: 'Сохраните зарплату под 8%',
-  subtitle: 'Отложите часть на накопительный счёт',
-  background_color: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)',
-  icon: '💰',
-  action_text: 'Открыть счёт',
-  status: 'pending',
-  created_at: null,
-}
+const offer = makeOffer({ id: 1 })
 
 describe('BannerCarousel', () => {
   it('renders the empty state when there are no offers', () => {

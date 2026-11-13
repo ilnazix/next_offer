@@ -99,3 +99,16 @@
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
 }
+
+.no-demo-badge {
+  margin-left: var(--space-sm);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: #f3f4f6;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}

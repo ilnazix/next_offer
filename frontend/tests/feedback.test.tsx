@@ -2,19 +2,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import App from '../src/App'
-import type { Offer } from '../src/types'
+import { makeOffer } from './factories'
 
-const offer: Offer = {
-  id: 7,
-  type: 'salary',
-  title: 'Сохраните зарплату под 8%',
-  subtitle: 'Отложите часть на накопительный счёт',
-  background_color: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)',
-  icon: '💰',
-  action_text: 'Открыть счёт',
-  status: 'pending',
-  created_at: null,
-}
+const offer = makeOffer()
 
 function jsonResponse(body: unknown): Response {
   return {
