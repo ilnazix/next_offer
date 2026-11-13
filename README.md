@@ -43,10 +43,12 @@ curl http://localhost:8000/health
 
 - `GET /health` — проверка состояния
 - `POST /api/v1/events` — принять событие, опубликовать в RabbitMQ, вернуть `202`
+- `GET /api/v1/clients` — список клиентов для панели оператора
 - `GET /api/v1/clients/{client_id}/offers` — активные офферы клиента с полями баннера
 - `POST /api/v1/offers/{offer_id}/feedback` — реакция на оффер (заглушка)
 
 Сценарий зарплаты сразу после запуска: клиент `1`, событие `{"client_id": 1, "event_type": "salary", "payload": {"amount": 150000}}`.
+Симулятор событий поддерживает типы `salary`, `purchase`, `deposit_view`, `high_balance`.
 
 ## Тесты
 

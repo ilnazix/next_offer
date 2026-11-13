@@ -7,8 +7,15 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.messaging import EventPublisher, get_publisher
-from app.models import BannerTemplate, Offer
-from app.schemas import EventAccepted, EventIn, OfferOut, OffersResponse
+from app.models import BannerTemplate, Client, Offer
+from app.schemas import (
+    ClientOut,
+    ClientsResponse,
+    EventAccepted,
+    EventIn,
+    OfferOut,
+    OffersResponse,
+)
 
 api_router = APIRouter()
 
@@ -36,6 +43,19 @@ def post_event(
         }
     )
     return EventAccepted(event_id=event_id)
+
+
+@api_router.get(
+    "/clients",
+    response_model=ClientsResponse,
+)
+def list_clients(db: Session = Depends(get_db)):
+    clients = db.scalars(select(Client).order_by(Client.id)).all()
+    return ClientsResponse(
+        clients=[
+            ClientOut(id=client.id, full_name=client.full_name) for client in clients
+        ]
+    )
 
 
 @api_router.get(
