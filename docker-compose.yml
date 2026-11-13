@@ -17,6 +17,24 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: nextoffer-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-nextoffer}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-nextoffer}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   app:
     build:
       context: .
@@ -24,6 +42,7 @@ services:
     container_name: nextoffer-app
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rozochka}:${POSTGRES_PASSWORD:-rozochka}@postgres:5432/${POSTGRES_DB:-rozochka}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-nextoffer}:${RABBITMQ_PASSWORD:-nextoffer}@rabbitmq:5672/
       UVICORN_HOST: 0.0.0.0
       UVICORN_PORT: 8000
     ports:
@@ -34,7 +53,28 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextoffer-worker
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rozochka}:${POSTGRES_PASSWORD:-rozochka}@postgres:5432/${POSTGRES_DB:-rozochka}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-nextoffer}:${RABBITMQ_PASSWORD:-nextoffer}@rabbitmq:5672/
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./app:/app/app:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: python -m app.worker
 
 volumes:
   postgres_data:
+  rabbitmq_data:
