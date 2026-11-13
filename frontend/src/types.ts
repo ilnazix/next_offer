@@ -28,3 +28,11 @@ export interface EventAccepted {
   event_id: string
   status: string
 }
+
+export type OfferAction = 'accepted' | 'declined' | 'dismissed'
+
+export interface FeedbackResponse {
+  id: number
+  status: OfferAction
+  responded_at: string
+}

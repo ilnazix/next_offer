@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,8 @@ from app.schemas import (
     ClientsResponse,
     EventAccepted,
     EventIn,
+    FeedbackIn,
+    FeedbackOut,
     OfferOut,
     OffersResponse,
 )
@@ -90,6 +92,26 @@ def get_client_offers(client_id: int, db: Session = Depends(get_db)):
     return OffersResponse(client_id=client_id, offers=offers)
 
 
-@api_router.post("/offers/{offer_id}/feedback")
-def post_feedback(offer_id: int, feedback: dict):
-    return {"offer_id": offer_id, "feedback": feedback, "message": "placeholder"}
+@api_router.post(
+    "/offers/{offer_id}/feedback",
+    response_model=FeedbackOut,
+)
+def post_feedback(
+    offer_id: int,
+    feedback: FeedbackIn,
+    db: Session = Depends(get_db),
+):
+    offer = db.get(Offer, offer_id)
+    if offer is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Offer not found")
+
+    offer.status = feedback.action
+    offer.responded_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(offer)
+
+    return FeedbackOut(
+        id=offer.id,
+        status=offer.status,
+        responded_at=offer.responded_at,
+    )

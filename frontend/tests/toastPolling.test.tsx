@@ -56,11 +56,13 @@ describe('new offer toast', () => {
 
     const toast = screen.getByTestId(`toast-${offer.id}`)
     expect(toast).toBeInTheDocument()
-    expect(screen.getAllByText(offer.title)).toHaveLength(2)
+
+    const carousel = screen.getByLabelText('Активные персональные предложения')
+    expect(within(carousel).getByText(offer.title)).toBeInTheDocument()
 
     fireEvent.click(within(toast).getByRole('button', { name: /закрыть/i }))
 
     expect(screen.queryByTestId(`toast-${offer.id}`)).toBeNull()
-    expect(screen.getByText(offer.title)).toBeInTheDocument()
+    expect(within(carousel).getByText(offer.title)).toBeInTheDocument()
   })
 })

@@ -18,7 +18,7 @@ export default function App() {
   const [eventError, setEventError] = useState<string | null>(null)
   const [lastEvent, setLastEvent] = useState<SimulatedEventRecord | null>(null)
 
-  const { offers, status, error, loadedClientId } =
+  const { offers, status, error, loadedClientId, respondToOffer } =
     useClientOffers(selectedClientId)
   const { clients, error: clientsError } = useClients()
   const { toasts, dismissToast } = useOfferToasts(offers, {
@@ -96,7 +96,7 @@ export default function App() {
             {initialLoading ? (
               <p className="no-empty">Загрузка предложений…</p>
             ) : (
-              <BannerCarousel offers={offers} />
+              <BannerCarousel offers={offers} onRespond={respondToOffer} />
             )}
           </section>
 

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { fetchClientOffers } from '../api/offers'
+import { fetchClientOffers, submitOfferFeedback } from '../api/offers'
 import { config } from '../config'
-import type { Offer } from '../types'
+import type { Offer, OfferAction } from '../types'
 
 export type OffersStatus = 'loading' | 'ready' | 'error'
 
@@ -15,6 +15,7 @@ interface UseClientOffersResult {
   status: OffersStatus
   error: string | null
   loadedClientId: number | null
+  respondToOffer: (offerId: number, action: OfferAction) => Promise<void>
 }
 
 export function useClientOffers(
@@ -26,6 +27,7 @@ export function useClientOffers(
   const [error, setError] = useState<string | null>(null)
   const [loadedClientId, setLoadedClientId] = useState<number | null>(null)
   const hasLoaded = useRef(false)
+  const respondedOfferIds = useRef(new Set<number>())
 
   useEffect(() => {
     let cancelled = false
@@ -40,7 +42,9 @@ export function useClientOffers(
         if (cancelled) return
 
         hasLoaded.current = true
-        setOffers(nextOffers)
+        setOffers(
+          nextOffers.filter((offer) => !respondedOfferIds.current.has(offer.id)),
+        )
         setLoadedClientId(clientId)
         setError(null)
         setStatus('ready')
@@ -64,7 +68,29 @@ export function useClientOffers(
     }
   }, [clientId, intervalMs])
 
+  const respondToOffer = useCallback(
+    async (offerId: number, action: OfferAction) => {
+      try {
+        await submitOfferFeedback(offerId, action)
+        respondedOfferIds.current.add(offerId)
+        setOffers((current) =>
+          current.filter((offer) => offer.id !== offerId),
+        )
+        setError(null)
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'unknown error')
+      }
+    },
+    [],
+  )
+
   const visibleOffers = loadedClientId === clientId ? offers : []
 
-  return { offers: visibleOffers, status, error, loadedClientId }
+  return {
+    offers: visibleOffers,
+    status,
+    error,
+    loadedClientId,
+    respondToOffer,
+  }
 }
