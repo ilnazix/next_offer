@@ -1,4 +1,6 @@
-from app.models import Client, Offer
+import pytest
+
+from app.models import BannerTemplate, Client, Offer
 from app.services.offers import handle_event
 
 
@@ -110,3 +112,28 @@ def test_worker_creates_distinct_offers_for_distinct_events(session, seeded):
     assert second is not None
     assert first.id != second.id
     assert session.query(Offer).count() == 2
+
+
+EVENT_BANNER_TYPES = ["salary", "purchase", "deposit_view", "high_balance"]
+
+
+@pytest.mark.parametrize("event_type", EVENT_BANNER_TYPES)
+def test_worker_maps_event_type_to_matching_banner_template(
+    session, seeded, event_type
+):
+    offer = handle_event(
+        {
+            "event_id": f"evt-{event_type}",
+            "client_id": seeded["client_id"],
+            "event_type": event_type,
+            "payload": {},
+            "occurred_at": "2026-11-14T10:00:00+00:00",
+        },
+        session,
+    )
+
+    assert offer is not None
+    assert offer.trigger_type == event_type
+    template = session.get(BannerTemplate, offer.banner_template_id)
+    assert template is not None
+    assert template.type == event_type

@@ -5,9 +5,10 @@ const FALLBACK_GRADIENT = 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
 interface OfferBannerProps {
   offer: Offer
   onClose?: () => void
+  closeLabel?: string
 }
 
-export function OfferBanner({ offer, onClose }: OfferBannerProps) {
+export function OfferBanner({ offer, onClose, closeLabel }: OfferBannerProps) {
   return (
     <article
       className="no-banner"
@@ -18,8 +19,8 @@ export function OfferBanner({ offer, onClose }: OfferBannerProps) {
         <button
           type="button"
           className="no-banner__close"
-          aria-label="Закрыть уведомление"
           onClick={onClose}
+          aria-label={closeLabel ?? 'Закрыть уведомление'}
         >
           ×
         </button>

@@ -31,3 +31,12 @@ class OfferOut(BaseModel):
 class OffersResponse(BaseModel):
     client_id: int
     offers: list[OfferOut]
+
+
+class ClientOut(BaseModel):
+    id: int
+    full_name: str | None = None
+
+
+class ClientsResponse(BaseModel):
+    clients: list[ClientOut]

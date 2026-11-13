@@ -1,8 +1,9 @@
 interface HeaderProps {
   clientId: number
+  clientName?: string | null
 }
 
-export function Header({ clientId }: HeaderProps) {
+export function Header({ clientId, clientName }: HeaderProps) {
   return (
     <header className="no-header">
       <div className="no-header__left">
@@ -15,7 +16,9 @@ export function Header({ clientId }: HeaderProps) {
         />
       </div>
       <div className="no-header__right">
-        <span className="no-client-label">Клиент #{clientId}</span>
+        <span className="no-client-label">
+          {clientName ?? `Клиент #${clientId}`}
+        </span>
         <div className="no-avatar" aria-hidden="true">
           К
         </div>

@@ -98,3 +98,13 @@ def test_cors_allows_local_frontend_origin(client, seeded):
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_list_clients_exposes_seeded_demo_clients(client, seeded):
+    response = client.get("/api/v1/clients")
+
+    assert response.status_code == 200
+    clients = response.json()["clients"]
+    returned_ids = {client["id"] for client in clients}
+    assert set(seeded["client_ids"]) <= returned_ids
+    assert all(client["full_name"] for client in clients)

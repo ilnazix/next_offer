@@ -6,6 +6,7 @@ import type { Offer } from '../types'
 interface UseOfferToastsOptions {
   ready?: boolean
   timeoutMs?: number
+  clientId?: number | null
 }
 
 interface UseOfferToastsResult {
@@ -15,15 +16,28 @@ interface UseOfferToastsResult {
 
 export function useOfferToasts(
   offers: Offer[],
-  { ready = true, timeoutMs = config.toastTimeoutMs }: UseOfferToastsOptions = {},
+  {
+    ready = true,
+    timeoutMs = config.toastTimeoutMs,
+    clientId,
+  }: UseOfferToastsOptions = {},
 ): UseOfferToastsResult {
   const [toasts, setToasts] = useState<Offer[]>([])
   const seenOfferIds = useRef<Set<number>>(new Set())
   const hasSeeded = useRef(false)
+  const loadedClientRef = useRef<number | null>(null)
   const timers = useRef<Map<number, number>>(new Map())
 
   useEffect(() => {
     if (!ready) return
+
+    if (clientId != null && loadedClientRef.current !== clientId) {
+      loadedClientRef.current = clientId
+      seenOfferIds.current = new Set(offers.map((offer) => offer.id))
+      hasSeeded.current = true
+      setToasts([])
+      return
+    }
 
     if (!hasSeeded.current) {
       hasSeeded.current = true
@@ -42,7 +56,7 @@ export function useOfferToasts(
         ...freshOffers.filter((offer) => !currentIds.has(offer.id)),
       ]
     })
-  }, [offers, ready])
+  }, [offers, ready, clientId])
 
   useEffect(() => {
     toasts.forEach((toast) => {

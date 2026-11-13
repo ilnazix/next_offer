@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 EVENT_TYPE_TO_BANNER_TYPE = {
     "salary": "salary",
     "salary_received": "salary",
+    "purchase": "purchase",
+    "deposit_view": "deposit_view",
+    "high_balance": "high_balance",
 }
 
 
