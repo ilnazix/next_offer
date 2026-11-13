@@ -38,7 +38,7 @@ def test_worker_redelivery_does_not_duplicate_offer(session, seeded):
     assert session.query(Offer).filter_by(event_id="evt-worker-1").count() == 1
 
 
-def test_worker_skips_ineligible_client(session, seeded):
+def test_worker_skips_client_with_active_savings_account(session, seeded):
     client = session.get(Client, seeded["client_id"])
     client.has_savings_account = True
     session.commit()
@@ -47,3 +47,66 @@ def test_worker_skips_ineligible_client(session, seeded):
 
     assert offer is None
     assert session.query(Offer).count() == 0
+
+
+def test_worker_skips_client_with_more_than_one_active_deposit(session, seeded):
+    client = session.get(Client, seeded["client_id"])
+    client.active_deposits_count = 2
+    session.commit()
+
+    offer = handle_event(salary_event(seeded["client_id"], "evt-two-deposits"), session)
+
+    assert offer is None
+    assert session.query(Offer).count() == 0
+
+
+def test_worker_creates_offer_for_client_with_one_active_deposit(session, seeded):
+    client = session.get(Client, seeded["client_id"])
+    client.active_deposits_count = 1
+    session.commit()
+
+    offer = handle_event(salary_event(seeded["client_id"], "evt-one-deposit"), session)
+
+    assert offer is not None
+    assert offer.client_id == seeded["client_id"]
+    assert session.query(Offer).filter_by(event_id="evt-one-deposit").count() == 1
+
+
+def test_worker_redelivery_in_fresh_session_does_not_duplicate_offer(
+    session, session_factory, seeded
+):
+    first = handle_event(salary_event(seeded["client_id"], "evt-fresh-session"), session)
+    assert first is not None
+
+    with session_factory() as other_session:
+        second = handle_event(
+            salary_event(seeded["client_id"], "evt-fresh-session"), other_session
+        )
+
+        assert second is not None
+        assert second.id == first.id
+        assert other_session.query(Offer).filter_by(event_id="evt-fresh-session").count() == 1
+
+
+def test_worker_redelivery_returns_existing_offer_after_status_change(session, seeded):
+    first = handle_event(salary_event(seeded["client_id"], "evt-after-status"), session)
+    assert first is not None
+    first.status = "accepted"
+    session.commit()
+
+    second = handle_event(salary_event(seeded["client_id"], "evt-after-status"), session)
+
+    assert second is not None
+    assert second.id == first.id
+    assert second.status == "accepted"
+    assert session.query(Offer).filter_by(event_id="evt-after-status").count() == 1
+
+
+def test_worker_creates_distinct_offers_for_distinct_events(session, seeded):
+    first = handle_event(salary_event(seeded["client_id"], "evt-distinct-1"), session)
+    second = handle_event(salary_event(seeded["client_id"], "evt-distinct-2"), session)
+
+    assert first is not None
+    assert second is not None
+    assert first.id != second.id
+    assert session.query(Offer).count() == 2
