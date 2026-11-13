@@ -15,6 +15,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from app.constants import OFFER_STATUS_VALUES
+
+
+def _sql_in_list(values: tuple[str, ...]) -> str:
+    return ", ".join(f"'{value}'" for value in values)
+
 
 class Base(DeclarativeBase):
     pass
@@ -78,7 +84,7 @@ class Offer(Base):
     __tablename__ = "offers"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('pending', 'shown', 'accepted', 'declined', 'dismissed')",
+            f"status IN ({_sql_in_list(OFFER_STATUS_VALUES)})",
             name="offers_status_check",
         ),
     )

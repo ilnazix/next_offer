@@ -1,66 +1,56 @@
+from dataclasses import dataclass
+
 from app.models import Account, BannerTemplate, Client, Product
 
-SALARY_TITLE = "Сохраните зарплату под 8%"
-SALARY_SUBTITLE = "Отложите часть на накопительный счёт с ежемесячной капитализацией"
-SALARY_GRADIENT = "linear-gradient(135deg, #7c3aed 0%, #db2777 100%)"
-SALARY_ICON = "💰"
-SALARY_ACTION_TEXT = "Открыть счёт"
 
-PURCHASE_TITLE = "Накопите на крупную покупку"
-PURCHASE_SUBTITLE = "Откройте накопительный счёт для ремонта или отпуска"
-PURCHASE_GRADIENT = "linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)"
-PURCHASE_ICON = "🏠"
-PURCHASE_ACTION_TEXT = "Открыть счёт"
+@dataclass(frozen=True)
+class BannerSeed:
+    type: str
+    title: str
+    subtitle: str
+    background_color: str
+    icon: str
+    action_text: str
+    product_code: str
 
-DEPOSIT_VIEW_TITLE = "Специальная ставка по вкладу"
-DEPOSIT_VIEW_SUBTITLE = "Только до конца месяца — вклад под 8,5% годовых"
-DEPOSIT_VIEW_GRADIENT = "linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)"
-DEPOSIT_VIEW_ICON = "📈"
-DEPOSIT_VIEW_ACTION_TEXT = "Открыть вклад"
 
-HIGH_BALANCE_TITLE = "Перенесите остаток на накоп. счёт"
-HIGH_BALANCE_SUBTITLE = "Ваш текущий остаток может приносить доход"
-HIGH_BALANCE_GRADIENT = "linear-gradient(135deg, #059669 0%, #10b981 100%)"
-HIGH_BALANCE_ICON = "💳"
-HIGH_BALANCE_ACTION_TEXT = "Перевести средства"
-
-BANNER_SEEDS = (
-    {
-        "type": "salary",
-        "title": SALARY_TITLE,
-        "subtitle": SALARY_SUBTITLE,
-        "background_color": SALARY_GRADIENT,
-        "icon": SALARY_ICON,
-        "action_text": SALARY_ACTION_TEXT,
-        "product_code": "savings_account",
-    },
-    {
-        "type": "purchase",
-        "title": PURCHASE_TITLE,
-        "subtitle": PURCHASE_SUBTITLE,
-        "background_color": PURCHASE_GRADIENT,
-        "icon": PURCHASE_ICON,
-        "action_text": PURCHASE_ACTION_TEXT,
-        "product_code": "savings_account",
-    },
-    {
-        "type": "deposit_view",
-        "title": DEPOSIT_VIEW_TITLE,
-        "subtitle": DEPOSIT_VIEW_SUBTITLE,
-        "background_color": DEPOSIT_VIEW_GRADIENT,
-        "icon": DEPOSIT_VIEW_ICON,
-        "action_text": DEPOSIT_VIEW_ACTION_TEXT,
-        "product_code": "term_deposit",
-    },
-    {
-        "type": "high_balance",
-        "title": HIGH_BALANCE_TITLE,
-        "subtitle": HIGH_BALANCE_SUBTITLE,
-        "background_color": HIGH_BALANCE_GRADIENT,
-        "icon": HIGH_BALANCE_ICON,
-        "action_text": HIGH_BALANCE_ACTION_TEXT,
-        "product_code": "savings_account",
-    },
+BANNER_SEEDS: tuple[BannerSeed, ...] = (
+    BannerSeed(
+        type="salary",
+        title="Сохраните зарплату под 8%",
+        subtitle="Отложите часть на накопительный счёт с ежемесячной капитализацией",
+        background_color="linear-gradient(135deg, #7c3aed 0%, #db2777 100%)",
+        icon="💰",
+        action_text="Открыть счёт",
+        product_code="savings_account",
+    ),
+    BannerSeed(
+        type="purchase",
+        title="Накопите на крупную покупку",
+        subtitle="Откройте накопительный счёт для ремонта или отпуска",
+        background_color="linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)",
+        icon="🏠",
+        action_text="Открыть счёт",
+        product_code="savings_account",
+    ),
+    BannerSeed(
+        type="deposit_view",
+        title="Специальная ставка по вкладу",
+        subtitle="Только до конца месяца — вклад под 8,5% годовых",
+        background_color="linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)",
+        icon="📈",
+        action_text="Открыть вклад",
+        product_code="term_deposit",
+    ),
+    BannerSeed(
+        type="high_balance",
+        title="Перенесите остаток на накоп. счёт",
+        subtitle="Ваш текущий остаток может приносить доход",
+        background_color="linear-gradient(135deg, #059669 0%, #10b981 100%)",
+        icon="💳",
+        action_text="Перевести средства",
+        product_code="savings_account",
+    ),
 )
 
 
@@ -120,15 +110,15 @@ def seed_demo_data(db):
     templates_by_type = {}
     for banner in BANNER_SEEDS:
         template = BannerTemplate(
-            type=banner["type"],
-            title=banner["title"],
-            subtitle=banner["subtitle"],
-            background_color=banner["background_color"],
-            icon=banner["icon"],
-            action_text=banner["action_text"],
-            product_id=products_by_code[banner["product_code"]].id,
+            type=banner.type,
+            title=banner.title,
+            subtitle=banner.subtitle,
+            background_color=banner.background_color,
+            icon=banner.icon,
+            action_text=banner.action_text,
+            product_id=products_by_code[banner.product_code].id,
         )
-        templates_by_type[banner["type"]] = template
+        templates_by_type[banner.type] = template
 
     db.add_all([first_account, second_account, *templates_by_type.values()])
     db.commit()

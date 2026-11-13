@@ -1,24 +1,9 @@
 import pytest
 
-from app.seed import (
-    DEPOSIT_VIEW_GRADIENT,
-    DEPOSIT_VIEW_ICON,
-    DEPOSIT_VIEW_SUBTITLE,
-    DEPOSIT_VIEW_TITLE,
-    HIGH_BALANCE_GRADIENT,
-    HIGH_BALANCE_ICON,
-    HIGH_BALANCE_SUBTITLE,
-    HIGH_BALANCE_TITLE,
-    PURCHASE_GRADIENT,
-    PURCHASE_ICON,
-    PURCHASE_SUBTITLE,
-    PURCHASE_TITLE,
-    SALARY_GRADIENT,
-    SALARY_ICON,
-    SALARY_SUBTITLE,
-    SALARY_TITLE,
-)
+from app.seed import BANNER_SEEDS
 from app.services.offers import handle_event
+
+BANNERS_BY_TYPE = {banner.type: banner for banner in BANNER_SEEDS}
 
 
 def test_salary_event_becomes_visible_offer(client, publisher, seeded, session):
@@ -42,43 +27,20 @@ def test_salary_event_becomes_visible_offer(client, publisher, seeded, session):
     offers = offers_response.json()["offers"]
     assert len(offers) == 1
     assert offers[0]["type"] == "salary"
-    assert offers[0]["title"] == "Сохраните зарплату под 8%"
-    assert offers[0]["status"] == "pending"
+    assert offers[0]["title"] == BANNERS_BY_TYPE["salary"].title
+    assert offers[0]["status"] == "shown"
 
 
 SIMULATOR_BANNERS = [
     pytest.param(
-        "salary",
-        SALARY_TITLE,
-        SALARY_SUBTITLE,
-        SALARY_GRADIENT,
-        SALARY_ICON,
-        id="salary",
-    ),
-    pytest.param(
-        "purchase",
-        PURCHASE_TITLE,
-        PURCHASE_SUBTITLE,
-        PURCHASE_GRADIENT,
-        PURCHASE_ICON,
-        id="purchase",
-    ),
-    pytest.param(
-        "deposit_view",
-        DEPOSIT_VIEW_TITLE,
-        DEPOSIT_VIEW_SUBTITLE,
-        DEPOSIT_VIEW_GRADIENT,
-        DEPOSIT_VIEW_ICON,
-        id="deposit_view",
-    ),
-    pytest.param(
-        "high_balance",
-        HIGH_BALANCE_TITLE,
-        HIGH_BALANCE_SUBTITLE,
-        HIGH_BALANCE_GRADIENT,
-        HIGH_BALANCE_ICON,
-        id="high_balance",
-    ),
+        banner.type,
+        banner.title,
+        banner.subtitle,
+        banner.background_color,
+        banner.icon,
+        id=banner.type,
+    )
+    for banner in BANNER_SEEDS
 ]
 
 

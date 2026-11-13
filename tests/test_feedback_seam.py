@@ -95,4 +95,27 @@ def test_active_offers_expose_status(client, seeded, session):
     offers = response.json()["offers"]
     assert len(offers) == 1
     assert offers[0]["id"] == offer.id
-    assert offers[0]["status"] == "pending"
+    assert offers[0]["status"] == "shown"
+
+
+def test_responded_offer_status_is_available_with_include_responded(
+    client, seeded, session
+):
+    offer = create_offer(session, seeded, event_id="evt-status-after-response")
+
+    feedback = client.post(
+        f"/api/v1/offers/{offer.id}/feedback",
+        json={"action": "declined"},
+    )
+    assert feedback.status_code == 200
+
+    response = client.get(
+        f"/api/v1/clients/{seeded['client_id']}/offers",
+        params={"include_responded": "true"},
+    )
+
+    assert response.status_code == 200
+    offers = response.json()["offers"]
+    assert len(offers) == 1
+    assert offers[0]["id"] == offer.id
+    assert offers[0]["status"] == "declined"

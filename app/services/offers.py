@@ -5,16 +5,17 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.constants import EventType, OfferStatus
 from app.models import BannerTemplate, Client, Offer
 
 logger = logging.getLogger(__name__)
 
 EVENT_TYPE_TO_BANNER_TYPE = {
-    "salary": "salary",
-    "salary_received": "salary",
-    "purchase": "purchase",
-    "deposit_view": "deposit_view",
-    "high_balance": "high_balance",
+    EventType.SALARY.value: "salary",
+    EventType.SALARY_RECEIVED.value: "salary",
+    EventType.PURCHASE.value: "purchase",
+    EventType.DEPOSIT_VIEW.value: "deposit_view",
+    EventType.HIGH_BALANCE.value: "high_balance",
 }
 
 
@@ -69,7 +70,7 @@ def handle_event(message: dict[str, Any], db: Session) -> Offer | None:
         trigger_type=message.get("event_type"),
         trigger_payload=message.get("payload"),
         message_text=template.title,
-        status="pending",
+        status=OfferStatus.PENDING.value,
     )
     db.add(offer)
     try:
