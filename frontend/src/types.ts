@@ -14,3 +14,17 @@ export interface OffersResponse {
   client_id: number
   offers: Offer[]
 }
+
+export interface Client {
+  id: number
+  full_name: string | null
+}
+
+export interface ClientsResponse {
+  clients: Client[]
+}
+
+export interface EventAccepted {
+  event_id: string
+  status: string
+}

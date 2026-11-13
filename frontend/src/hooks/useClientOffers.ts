@@ -14,6 +14,7 @@ interface UseClientOffersResult {
   offers: Offer[]
   status: OffersStatus
   error: string | null
+  loadedClientId: number | null
 }
 
 export function useClientOffers(
@@ -23,6 +24,7 @@ export function useClientOffers(
   const [offers, setOffers] = useState<Offer[]>([])
   const [status, setStatus] = useState<OffersStatus>('loading')
   const [error, setError] = useState<string | null>(null)
+  const [loadedClientId, setLoadedClientId] = useState<number | null>(null)
   const hasLoaded = useRef(false)
 
   useEffect(() => {
@@ -39,6 +41,7 @@ export function useClientOffers(
 
         hasLoaded.current = true
         setOffers(nextOffers)
+        setLoadedClientId(clientId)
         setError(null)
         setStatus('ready')
       } catch (cause) {
@@ -61,5 +64,7 @@ export function useClientOffers(
     }
   }, [clientId, intervalMs])
 
-  return { offers, status, error }
+  const visibleOffers = loadedClientId === clientId ? offers : []
+
+  return { offers: visibleOffers, status, error, loadedClientId }
 }
