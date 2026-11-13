@@ -22,23 +22,41 @@ curl http://localhost:8000/health
 .
 ├── app/              # FastAPI приложение
 │   ├── api/          # API роутеры
+│   ├── services/     # Обработка событий и создание офферов
 │   ├── config.py     # Настройки
 │   ├── db.py         # SQLAlchemy подключение
+│   ├── messaging.py  # RabbitMQ publisher
+│   ├── models.py     # SQLAlchemy модели
+│   ├── worker.py     # Consumer очереди событий
 │   └── main.py       # Точка входа
-├── migrations/       # SQL-миграции (init.sql)
+├── migrations/       # SQL-миграции (init.sql + demo seed)
 ├── scripts/          # Генератор данных
+├── tests/            # HTTP seam и worker seam тесты
 ├── docs/             # Требования и wayfinder-карта
 ├── docker-compose.yml
 ├── Dockerfile
-└── requirements.txt
+├── requirements.txt
+└── requirements-dev.txt
 ```
 
-## API (заглушки)
+## API
 
 - `GET /health` — проверка состояния
-- `GET /api/v1/offers/{client_id}` — офферы клиента
-- `POST /api/v1/events` — событие от клиента/транзакции
-- `POST /api/v1/offers/{offer_id}/feedback` — реакция на оффер
+- `POST /api/v1/events` — принять событие, опубликовать в RabbitMQ, вернуть `202`
+- `GET /api/v1/clients/{client_id}/offers` — активные офферы клиента с полями баннера
+- `POST /api/v1/offers/{offer_id}/feedback` — реакция на оффер (заглушка)
+
+Сценарий зарплаты сразу после запуска: клиент `1`, событие `{"client_id": 1, "event_type": "salary", "payload": {"amount": 150000}}`.
+
+## Тесты
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Тесты не требуют Docker: HTTP seam использует SQLite in-memory и подменяет
+RabbitMQ publisher, worker seam вызывает обработчик события напрямую.
 
 ## Документация
 
