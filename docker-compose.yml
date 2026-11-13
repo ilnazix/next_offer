@@ -92,6 +92,20 @@ services:
       start_period: 15s
     command: python -m app.worker
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nextoffer-frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+      VITE_CLIENT_ID: ${VITE_CLIENT_ID:-1}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      app:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   rabbitmq_data:
