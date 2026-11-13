@@ -1,4 +1,4 @@
-# Wayfinder Map: Проактивный консьерж MVP
+# Wayfinder Map: next_offer MVP
 
 **Label:** `wayfinder:map`
 

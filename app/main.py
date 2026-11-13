@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Rozochka — Proactive Concierge Agent",
+    title="next_offer — Proactive Concierge Agent",
     description="MVP of an AI agent that analyzes transactions and proposes banking products.",
     version="0.1.0",
     lifespan=lifespan,

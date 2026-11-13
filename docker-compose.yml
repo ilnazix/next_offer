@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: rozochka-postgres
+    container_name: nextoffer-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-rozochka}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rozochka}
@@ -21,7 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: rozochka-app
+    container_name: nextoffer-app
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rozochka}:${POSTGRES_PASSWORD:-rozochka}@postgres:5432/${POSTGRES_DB:-rozochka}
       UVICORN_HOST: 0.0.0.0
