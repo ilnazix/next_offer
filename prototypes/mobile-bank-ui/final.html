@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>next_offer — Final UI Prototype (A + C)</title>
+  <link rel="stylesheet" href="design-system.css" />
+</head>
+<body>
+  <header class="no-header">
+    <div class="no-header__left">
+      <div class="no-logo">next_offer</div>
+      <input class="no-search" type="text" placeholder="Поиск по продуктам..." />
+    </div>
+    <div class="no-header__right">
+      <span>Розалина</span>
+      <div class="no-avatar">Р</div>
+    </div>
+  </header>
+
+  <div class="no-layout">
+    <nav class="no-sidebar">
+      <div class="no-nav-item no-nav-item--active">Главная</div>
+      <div class="no-nav-item">Счета и карты</div>
+      <div class="no-nav-item">Переводы</div>
+      <div class="no-nav-item">История</div>
+      <div class="no-nav-item">Предложения</div>
+      <div class="no-nav-item">Настройки</div>
+    </nav>
+
+    <main class="no-main" id="main-content">
+      <!-- Banner carousel -->
+      <section>
+        <h2 class="no-section-title">Персональные предложения</h2>
+        <div class="no-carousel" id="banner-carousel">
+          <p class="no-empty">Нет активных предложений. Нажмите событие справа →</p>
+        </div>
+      </section>
+
+      <!-- Main dashboard content -->
+      <section>
+        <h2 class="no-section-title">Мои финансы</h2>
+        <div class="no-balance-grid">
+          <div class="no-card">
+            <h3 class="no-card__label">Остаток на счёте</h3>
+            <div class="no-card__value">10 134,10 ₽</div>
+          </div>
+          <div class="no-card">
+            <h3 class="no-card__label">Кешбэк и бонусы</h3>
+            <div class="no-card__value">351 ₽</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="no-right-panel">
+      <div class="no-card">
+        <h3 class="no-section-title">Симулятор событий</h3>
+        <button class="no-event-btn" data-type="salary">Пришла зарплата +150 000 ₽</button>
+        <button class="no-event-btn" data-type="purchase">Крупная покупка −80 000 ₽</button>
+        <button class="no-event-btn no-event-btn--secondary" data-type="deposit_view">Смотрел вклады</button>
+        <button class="no-event-btn no-event-btn--secondary" data-type="high_balance">Высокий остаток</button>
+      </div>
+
+      <div class="no-card">
+        <h3 class="no-section-title">Состояние</h3>
+        <pre class="no-state-log" id="state-log" style="font-family: ui-monospace, monospace; font-size: 0.75rem; color: var(--color-text-secondary); white-space: pre-wrap; margin: 0;">Офферов: 0</pre>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Toast container -->
+  <div class="no-toast-container" id="toast-container"></div>
+
+  <script>
+    // --- Banner templates -----------------------------------------------------
+    const TEMPLATES = {
+      salary: {
+        type: 'salary',
+        title: 'Сохраните зарплату под 8%',
+        subtitle: 'Отложите часть на накопительный счёт с ежемесячной капитализацией',
+        gradient: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)',
+        icon: '💰',
+      },
+      purchase: {
+        type: 'purchase',
+        title: 'Накопите на крупную покупку',
+        subtitle: 'Откройте накопительный счёт для ремонта или отпуска',
+        gradient: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+        icon: '🏠',
+      },
+      deposit_view: {
+        type: 'deposit_view',
+        title: 'Специальная ставка по вкладу',
+        subtitle: 'Только до конца месяца — вклад под 8,5% годовых',
+        gradient: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)',
+        icon: '📈',
+      },
+      high_balance: {
+        type: 'high_balance',
+        title: 'Перенесите остаток на накоп. счёт',
+        subtitle: 'Ваш текущий остаток может приносить доход',
+        gradient: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+        icon: '💳',
+      },
+    };
+
+    // --- State ----------------------------------------------------------------
+    let offers = [];
+
+    // --- Helpers --------------------------------------------------------------
+    function bannerHtml(offer, mode = 'carousel') {
+      return `
+        <div class="no-banner ${mode === 'toast' ? 'no-banner--toast' : ''}" style="background: ${offer.gradient}">
+          <button class="no-banner__close" data-id="${offer.id}" aria-label="Закрыть">×</button>
+          <div>
+            <div class="no-banner__title">${offer.title}</div>
+            <div class="no-banner__subtitle">${offer.subtitle}</div>
+          </div>
+          <div class="no-banner__icon">${offer.icon}</div>
+        </div>
+      `;
+    }
+
+    function renderCarousel() {
+      const container = document.getElementById('banner-carousel');
+      if (!offers.length) {
+        container.innerHTML = '<p class="no-empty">Нет активных предложений. Нажмите событие справа →</p>';
+        return;
+      }
+      container.innerHTML = offers.map(o => bannerHtml(o, 'carousel')).join('');
+      bindCloseButtons(container);
+    }
+
+    function showToast(offer) {
+      const container = document.getElementById('toast-container');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'no-toast';
+      wrapper.innerHTML = bannerHtml(offer, 'toast');
+      container.appendChild(wrapper);
+      bindCloseButtons(wrapper, () => wrapper.remove());
+
+      // Auto-remove after 8 seconds
+      setTimeout(() => {
+        wrapper.classList.add('no-toast--out');
+        setTimeout(() => wrapper.remove(), 250);
+      }, 8000);
+    }
+
+    function bindCloseButtons(root, onClose) {
+      root.querySelectorAll('.no-banner__close').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = Number(btn.dataset.id);
+          offers = offers.filter(o => o.id !== id);
+          if (onClose) onClose();
+          renderCarousel();
+          updateStateLog();
+        });
+      });
+    }
+
+    function updateStateLog() {
+      const last = offers[0];
+      document.getElementById('state-log').textContent =
+        `Офферов: ${offers.length}\n` +
+        `Последнее: ${last ? last.createdAt + ' (' + last.type + ')' : '—'}`;
+    }
+
+    function createOffer(type) {
+      const tmpl = TEMPLATES[type];
+      const offer = {
+        id: Date.now(),
+        ...tmpl,
+        createdAt: new Date().toLocaleTimeString('ru-RU'),
+      };
+      offers.unshift(offer);
+      renderCarousel();
+      showToast(offer);
+      updateStateLog();
+    }
+
+    // --- Event wiring ---------------------------------------------------------
+    document.querySelectorAll('.no-event-btn').forEach(btn => {
+      btn.addEventListener('click', () => createOffer(btn.dataset.type));
+    });
+
+    // --- Polling simulation ---------------------------------------------------
+    setInterval(() => {
+      // Real app: GET /api/v1/clients/{id}/offers
+      // Prototype: state is in memory, re-render keeps UI in sync.
+      renderCarousel();
+    }, 3000);
+
+    // --- Init -----------------------------------------------------------------
+    renderCarousel();
+    updateStateLog();
+  </script>
+</body>
+</html>

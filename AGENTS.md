@@ -84,3 +84,17 @@ These skills are Claude-specific and were removed because they cannot work in Op
 ## Updating
 
 These skills were installed with `npx skills@latest add mattpocock/skills -a opencode`. To update, run the same command. Review any OpenCode-specific edits (this file, `setup-matt-pocock-skills/SKILL.md`, and `ask-matt/*`) after an update, because `npx skills` will copy fresh versions over them.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as GitHub issues in `ilnazix/next_offer`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
