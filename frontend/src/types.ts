@@ -14,3 +14,11 @@ export interface OffersResponse {
   client_id: number
   offers: Offer[]
 }
+
+export type OfferAction = 'accepted' | 'declined' | 'dismissed'
+
+export interface FeedbackResponse {
+  id: number
+  status: OfferAction
+  responded_at: string
+}

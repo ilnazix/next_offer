@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -31,3 +31,13 @@ class OfferOut(BaseModel):
 class OffersResponse(BaseModel):
     client_id: int
     offers: list[OfferOut]
+
+
+class FeedbackIn(BaseModel):
+    action: Literal["accepted", "declined", "dismissed"]
+
+
+class FeedbackOut(BaseModel):
+    id: int
+    status: str
+    responded_at: datetime

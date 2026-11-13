@@ -6,7 +6,9 @@ import { config } from './config'
 import { useClientOffers } from './hooks/useClientOffers'
 
 export default function App() {
-  const { offers, status, error } = useClientOffers(config.clientId)
+  const { offers, status, error, respondToOffer } = useClientOffers(
+    config.clientId,
+  )
   const initialLoading = status === 'loading' && offers.length === 0
   const pollLabel = error
     ? 'Нет связи с API'
@@ -41,7 +43,7 @@ export default function App() {
             {initialLoading ? (
               <p className="no-empty">Загрузка предложений…</p>
             ) : (
-              <BannerCarousel offers={offers} />
+              <BannerCarousel offers={offers} onRespond={respondToOffer} />
             )}
           </section>
 

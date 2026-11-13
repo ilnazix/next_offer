@@ -261,6 +261,41 @@ body {
   background: rgba(255, 255, 255, 0.4);
 }
 
+.no-banner__actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.no-banner__action {
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 0.5rem var(--space-md);
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--color-text-inverse);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.no-banner__action:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.no-banner__action--primary {
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.no-banner__action--primary:hover {
+  background: #f3f4f6;
+}
+
 /* Banner carousel */
 .no-carousel {
   display: flex;
