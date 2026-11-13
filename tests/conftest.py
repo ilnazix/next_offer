@@ -6,7 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-os.environ["DATABASE_URL"] = "sqlite://"
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL or "sqlite://"
 
 from app.db import get_db  # noqa: E402
 from app.main import app  # noqa: E402
@@ -24,17 +25,25 @@ class RecordingPublisher:
 
 
 @pytest.fixture
-def session_factory():
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+def engine():
+    if TEST_DATABASE_URL:
+        engine = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
+    else:
+        engine = create_engine(
+            "sqlite://",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
     Base.metadata.create_all(engine)
-    factory = sessionmaker(bind=engine, expire_on_commit=False)
-    yield factory
+    yield engine
     Base.metadata.drop_all(engine)
     engine.dispose()
+
+
+@pytest.fixture
+def session_factory(engine):
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    yield factory
 
 
 @pytest.fixture
