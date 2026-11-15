@@ -271,8 +271,9 @@ python -m app.worker
 
 ## Деплой демо
 
-Фронтенд — GitHub Pages, бэкенд — VPS с Docker Compose и Caddy. Пошаговая
-инструкция: [deploy/README.md](deploy/README.md).
+Один VPS: Caddy отдаёт статический фронтенд и проксирует API, TLS через
+`sslip.io` (без покупки домена). Пошаговая инструкция:
+[deploy/README.md](deploy/README.md).
 
 ## Документация
 

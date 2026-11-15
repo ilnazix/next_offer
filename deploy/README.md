@@ -1,29 +1,19 @@
-# Деплой демо: GitHub Pages + VPS
+# Деплой демо на один VPS
+
+Один сервер отдаёт и статический фронтенд, и API. TLS — автоматически через
+Caddy и бесплатный wildcard-DNS `sslip.io`, поэтому покупать домен не нужно.
 
 ```
-GitHub Pages (React, статика)          VPS (Docker Compose)
-https://<owner>.github.io/next_offer/  ──►  Caddy (TLS) ──► app ──► Postgres
-                                                              └──► RabbitMQ
-                                                              └──► worker ──► YandexGPT
+https://next-offer.<IP>.sslip.io
+  /        → Caddy → frontend/dist (статика React)
+  /api/*   → Caddy → app:8000 (FastAPI)
+  /health  → Caddy → app:8000
+  /docs*   → Caddy → app:8000 (Swagger)
 ```
 
-GitHub Pages хостит только фронтенд. Бэкенд (FastAPI, worker, Postgres, RabbitMQ)
-живёт на VPS и доступен по HTTPS через Caddy.
+Фронт и API на одном origin, поэтому CORS для браузера не требуется.
 
-## 1. GitHub Pages
-
-1. Сделай репозиторий публичным (Settings → General → Danger Zone → Change visibility).
-2. Settings → Pages → **Source: GitHub Actions**.
-3. Задай переменные репозитория (Settings → Secrets and variables → Actions → Variables):
-   - `VITE_API_BASE_URL` = `https://<API_DOMAIN>`
-   - `VITE_CLIENT_ID` = `1` (опционально)
-4. Пуш в `master` запускает `.github/workflows/pages.yml`.
-5. Сайт: `https://<owner>.github.io/next_offer/`.
-
-Воркфлоу собирает фронт с `VITE_BASE_PATH=/next_offer/`, иначе ассеты не найдутся
-на project page.
-
-## 2. VPS (бэкенд)
+## 1. Сервер
 
 Требования: Ubuntu 22.04+, Docker Engine + Compose plugin, открытые порты 80/443.
 
@@ -33,22 +23,20 @@ git clone https://github.com/ilnazix/next_offer.git /opt/next_offer
 cd /opt/next_offer
 
 cp deploy/.env.production.example .env
-# отредактируй .env: пароли, API_DOMAIN, CORS_ORIGINS, YANDEX_*
+# отредактируй .env: пароли, API_DOMAIN (sslip.io с IP сервера), CORS_ORIGINS, YANDEX_*
 chmod 600 .env
+mkdir -p frontend/dist
 
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-DNS:
-
-- если есть домен — A-запись `api` → IP сервера;
-- если нет — используй `sslip.io`: `API_DOMAIN=next-offer-api.<IP>.sslip.io`
-  (Caddy выпустит TLS-сертификат автоматически).
+`API_DOMAIN` — например `next-offer.203.0.113.10.sslip.io`. Caddy сам получит
+TLS-сертификат Let's Encrypt.
 
 Проверка:
 
 ```bash
-curl "https://$API_DOMAIN/health"
+curl "https://<API_DOMAIN>/health"
 ```
 
 Ожидаемо: `{"status":"ok","checks":{"database":"ok","rabbitmq":"ok"}}`.
@@ -56,16 +44,18 @@ curl "https://$API_DOMAIN/health"
 Демо-данные (клиенты, продукты, 4 шаблона) заливаются из `migrations/init.sql`
 при создании пустого тома Postgres.
 
-## 3. GitHub Actions для бэкенда
+## 2. GitHub Actions
 
-`.github/workflows/backend.yml`:
+`.github/workflows/backend.yml` на каждый push в `master`:
 
-1. На PR и push гоняет `pytest`.
-2. На push в `master` заходит по SSH на VPS, делает `git reset --hard origin/master`
+1. Гоняет backend-тесты и frontend-тесты.
+2. Собирает фронт с `VITE_API_BASE_URL=same-origin` (относительные запросы к `/api`)
+   и кладёт `frontend/dist` в артефакт.
+3. По SSH заливает `dist` на сервер, делает `git reset --hard origin/master`
    и `docker compose -f docker-compose.prod.yml up -d --build`.
-3. Если задана переменная `API_BASE_URL`, прогоняет `scripts/e2e_demo.py`.
+4. Если задана переменная `API_BASE_URL`, прогоняет `scripts/e2e_demo.py`.
 
-Нужные секреты репозитория (Settings → Secrets and variables → Actions → Secrets):
+Секреты репозитория (Settings → Secrets and variables → Actions → Secrets):
 
 | Секрет | Значение |
 | --- | --- |
@@ -79,15 +69,14 @@ curl "https://$API_DOMAIN/health"
 
 Рекомендуется создать Environment `production` с ручным подтверждением деплоя.
 
-## 4. Как это связано
+## 3. Что открыто наружу
 
-- Фронтенд ходит на абсолютный `VITE_API_BASE_URL` (Pages не умеет проксировать `/api`).
-- `CORS_ORIGINS` на сервере должен содержать `https://<owner>.github.io`.
-- Наружу открыты только 80/443 (Caddy). Postgres, RabbitMQ и app доступны
-  только внутри compose-сети.
+- Только 80/443 (Caddy).
+- Postgres, RabbitMQ и app доступны только внутри compose-сети.
+- Management UI RabbitMQ наружу не публикуется.
 - Секреты лежат только в `/opt/next_offer/.env` (`chmod 600`), в git не попадают.
 
-## 5. Обновление и откат
+## 4. Обновление и откат
 
 Деплой — пуш в `master`.
 
@@ -101,16 +90,10 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Миграции аддитивные, поэтому откат кода не ломает схему.
 
-## 6. Публичное демо: риски
+## 5. Публичное демо: риски
 
 - API без авторизации: любой может слать события и расходовать квоту YandexGPT.
   Минимально: бюджетный алерт в Yandex Cloud, `YANDEX_MAX_TOKENS`, лимиты Yandex.
   Дальше: rate limit на прокси/Cloudflare или demo-token на `POST /events`.
 - Только синтетические данные; не подключать реальные ПДн.
-- Management UI RabbitMQ наружу не публикуется.
 - Не коммитить `.env` и ключи.
-
-## 7. Локальная проверка prod-compose
-
-Prod-compose рассчитан на сервер с доменом. Для локального запуска используй
-обычный `docker compose up --build` и фронтенд отдельно (`npm run dev`).

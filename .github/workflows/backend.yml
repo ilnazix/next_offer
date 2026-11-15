@@ -1,38 +1,16 @@
-name: Backend CI/CD
+name: CI/CD
 
 on:
   push:
     branches: [master]
-    paths:
-      - "app/**"
-      - "migrations/**"
-      - "scripts/**"
-      - "tests/**"
-      - "requirements*.txt"
-      - "Dockerfile"
-      - "docker-compose.prod.yml"
-      - "deploy/**"
-      - "pytest.ini"
-      - ".github/workflows/backend.yml"
   pull_request:
-    paths:
-      - "app/**"
-      - "migrations/**"
-      - "scripts/**"
-      - "tests/**"
-      - "requirements*.txt"
-      - "Dockerfile"
-      - "docker-compose.prod.yml"
-      - "deploy/**"
-      - "pytest.ini"
-      - ".github/workflows/backend.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: backend-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -47,11 +25,38 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: pip install -r requirements-dev.txt
 
       - name: Run backend tests
         run: pytest -q
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Build frontend (same-origin API)
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: same-origin
+          VITE_CLIENT_ID: 1
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
 
   deploy:
     needs: test
@@ -61,7 +66,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to VPS
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      - name: Package frontend
+        run: tar -czf dist.tar.gz -C frontend/dist .
+
+      - name: Upload frontend to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          source: dist.tar.gz
+          target: /tmp
+          overwrite: true
+
+      - name: Deploy backend and static frontend
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -73,6 +97,10 @@ jobs:
             cd "${{ secrets.DEPLOY_PATH }}"
             git fetch --prune origin
             git reset --hard origin/master
+            mkdir -p frontend/dist
+            rm -rf frontend/dist/*
+            tar -xzf /tmp/dist.tar.gz -C frontend/dist
+            rm -f /tmp/dist.tar.gz
             docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
             docker image prune -f
 
