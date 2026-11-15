@@ -180,10 +180,11 @@ Frontend (см. `frontend/.env.example`):
 - `POST /api/v1/events` — принять событие, опубликовать в RabbitMQ, вернуть `202`.
 - `GET /api/v1/clients` — список клиентов для панели оператора.
 - `GET /api/v1/clients/{client_id}/offers` — офферы с полями баннера. По
-  умолчанию только активные (`pending`, `shown`); при первом показе `pending`
-  переходит в `shown` и заполняется `shown_at`. Параметр
-  `?include_responded=true` возвращает все статусы, включая `accepted`,
-  `declined` и `dismissed`.
+  умолчанию возвращает только активные (`pending`, `shown`), не более 5
+  последних (`?limit=1..50`); принятые, отклонённые и закрытые в список не
+  попадают. При первом показе `pending` переходит в `shown` и заполняется
+  `shown_at`. Параметр `?include_responded=true` возвращает все статусы,
+  включая `accepted`, `declined` и `dismissed`.
 - `POST /api/v1/offers/{offer_id}/feedback` — `accepted`, `declined` или
   `dismissed`; обновляет статус и `responded_at`.
 

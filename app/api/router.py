@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -66,6 +66,7 @@ def list_clients(db: Session = Depends(get_db)):
 def get_client_offers(
     client_id: int,
     include_responded: bool = False,
+    limit: int = Query(5, ge=1, le=50),
     db: Session = Depends(get_db),
 ):
     statement = (
@@ -76,6 +77,7 @@ def get_client_offers(
     if not include_responded:
         statement = statement.where(Offer.status.in_(ACTIVE_OFFER_STATUSES))
     statement = statement.order_by(Offer.created_at.desc(), Offer.id.desc())
+    statement = statement.limit(limit)
 
     rows = db.execute(statement).all()
 

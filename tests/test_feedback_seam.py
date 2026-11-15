@@ -119,3 +119,43 @@ def test_responded_offer_status_is_available_with_include_responded(
     assert len(offers) == 1
     assert offers[0]["id"] == offer.id
     assert offers[0]["status"] == "declined"
+
+
+def test_active_offers_are_limited_to_latest_five(client, seeded, session):
+    created = [
+        create_offer(session, seeded, event_id=f"evt-limit-{index}")
+        for index in range(7)
+    ]
+    # The two oldest offers were already handled and must not be shown again.
+    for offer, action in zip(created[:2], ("accepted", "declined")):
+        response = client.post(
+            f"/api/v1/offers/{offer.id}/feedback", json={"action": action}
+        )
+        assert response.status_code == 200
+
+    response = client.get(f"/api/v1/clients/{seeded['client_id']}/offers")
+
+    assert response.status_code == 200
+    offers = response.json()["offers"]
+    assert len(offers) == 5
+    assert [offer["id"] for offer in offers] == [
+        created[6].id,
+        created[5].id,
+        created[4].id,
+        created[3].id,
+        created[2].id,
+    ]
+    assert all(offer["status"] == "shown" for offer in offers)
+
+
+def test_offers_limit_can_be_overridden(client, seeded, session):
+    for index in range(4):
+        create_offer(session, seeded, event_id=f"evt-limit-override-{index}")
+
+    response = client.get(
+        f"/api/v1/clients/{seeded['client_id']}/offers",
+        params={"limit": 2},
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()["offers"]) == 2
