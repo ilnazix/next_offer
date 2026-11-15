@@ -63,7 +63,8 @@ curl "https://<API_DOMAIN>/health"
 | `DEPLOY_USER` | SSH-пользователь |
 | `DEPLOY_SSH_KEY` | приватный SSH-ключ |
 | `DEPLOY_PORT` | SSH-порт (по умолчанию 22) |
-| `DEPLOY_PATH` | `/opt/next_offer` |
+
+Путь на сервере фиксирован: `/opt/next_offer`.
 
 Переменная: `API_BASE_URL` = `https://<API_DOMAIN>`.
 
