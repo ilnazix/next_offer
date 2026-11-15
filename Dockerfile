@@ -12,9 +12,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Run the app as a non-root user.
+RUN useradd --create-home --uid 10001 appuser
+
 # Copy application code
-COPY app ./app
-COPY scripts ./scripts
+COPY --chown=appuser:appuser app ./app
+COPY --chown=appuser:appuser scripts ./scripts
+
+USER appuser
 
 # Default command (overridden in docker-compose for dev)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

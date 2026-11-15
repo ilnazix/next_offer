@@ -269,6 +269,12 @@ uvicorn app.main:app --reload
 python -m app.worker
 ```
 
+## Деплой демо
+
+Один VPS: Caddy отдаёт статический фронтенд и проксирует API, TLS через
+`sslip.io` (без покупки домена). Пошаговая инструкция:
+[deploy/README.md](deploy/README.md).
+
 ## Документация
 
 - [Требования](docs/requirements.md)
