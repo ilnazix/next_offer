@@ -1,0 +1,86 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "app/**"
+      - "migrations/**"
+      - "scripts/**"
+      - "tests/**"
+      - "requirements*.txt"
+      - "Dockerfile"
+      - "docker-compose.prod.yml"
+      - "deploy/**"
+      - "pytest.ini"
+      - ".github/workflows/backend.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "migrations/**"
+      - "scripts/**"
+      - "tests/**"
+      - "requirements*.txt"
+      - "Dockerfile"
+      - "docker-compose.prod.yml"
+      - "deploy/**"
+      - "pytest.ini"
+      - ".github/workflows/backend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run backend tests
+        run: pytest -q
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+            git fetch --prune origin
+            git reset --hard origin/master
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            docker image prune -f
+
+      - name: Smoke test deployed API
+        if: vars.API_BASE_URL != ''
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet httpx
+          python scripts/e2e_demo.py --base-url "$API_BASE_URL" --client-id 1

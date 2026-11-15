@@ -269,6 +269,11 @@ uvicorn app.main:app --reload
 python -m app.worker
 ```
 
+## Деплой демо
+
+Фронтенд — GitHub Pages, бэкенд — VPS с Docker Compose и Caddy. Пошаговая
+инструкция: [deploy/README.md](deploy/README.md).
+
 ## Документация
 
 - [Требования](docs/requirements.md)
