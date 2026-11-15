@@ -2,8 +2,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+psycopg://rozochka:rozochka@localhost:5432/rozochka"
-    rabbitmq_url: str = "amqp://nextoffer:nextoffer@localhost:5672/"
+    database_url: str = "postgresql+psycopg://next_offer:change_me@localhost:5432/next_offer"
+    rabbitmq_url: str = "amqp://next_offer:change_me@localhost:5672/"
     uvicorn_host: str = "0.0.0.0"
     uvicorn_port: int = 8000
     cors_origins: list[str] = [

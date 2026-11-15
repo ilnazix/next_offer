@@ -3,16 +3,16 @@ services:
     image: postgres:15-alpine
     container_name: nextoffer-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-rozochka}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rozochka}
-      POSTGRES_DB: ${POSTGRES_DB:-rozochka}
+      POSTGRES_USER: ${POSTGRES_USER:-next_offer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-next_offer}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rozochka} -d ${POSTGRES_DB:-rozochka}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-next_offer} -d ${POSTGRES_DB:-next_offer}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -22,8 +22,8 @@ services:
     image: rabbitmq:4-management-alpine
     container_name: nextoffer-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-nextoffer}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-nextoffer}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-next_offer}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-change_me}
     ports:
       - "${RABBITMQ_PORT:-5672}:5672"
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
@@ -42,8 +42,8 @@ services:
       dockerfile: Dockerfile
     container_name: nextoffer-app
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rozochka}:${POSTGRES_PASSWORD:-rozochka}@postgres:5432/${POSTGRES_DB:-rozochka}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-nextoffer}:${RABBITMQ_PASSWORD:-nextoffer}@rabbitmq:5672/
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-next_offer}:${POSTGRES_PASSWORD:-change_me}@postgres:5432/${POSTGRES_DB:-next_offer}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-next_offer}:${RABBITMQ_PASSWORD:-change_me}@rabbitmq:5672/
       CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:5173","http://127.0.0.1:5173"]}'
       UVICORN_HOST: 0.0.0.0
       UVICORN_PORT: 8000
@@ -71,8 +71,8 @@ services:
       dockerfile: Dockerfile
     container_name: nextoffer-worker
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rozochka}:${POSTGRES_PASSWORD:-rozochka}@postgres:5432/${POSTGRES_DB:-rozochka}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-nextoffer}:${RABBITMQ_PASSWORD:-nextoffer}@rabbitmq:5672/
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-next_offer}:${POSTGRES_PASSWORD:-change_me}@postgres:5432/${POSTGRES_DB:-next_offer}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-next_offer}:${RABBITMQ_PASSWORD:-change_me}@rabbitmq:5672/
       PYTHONUNBUFFERED: "1"
       WORKER_HEARTBEAT_PATH: /tmp/next_offer_worker_heartbeat
       WORKER_HEARTBEAT_MAX_AGE_SECONDS: "20"

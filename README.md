@@ -121,13 +121,13 @@ Backend и инфраструктура (см. `.env.example`):
 
 | Переменная | По умолчанию | Назначение |
 | --- | --- | --- |
-| `POSTGRES_USER` | `rozochka` | Пользователь PostgreSQL |
-| `POSTGRES_PASSWORD` | `rozochka` | Пароль PostgreSQL |
-| `POSTGRES_DB` | `rozochka` | Имя базы |
+| `POSTGRES_USER` | `next_offer` | Пользователь PostgreSQL |
+| `POSTGRES_PASSWORD` | `change_me` | Пароль PostgreSQL |
+| `POSTGRES_DB` | `next_offer` | Имя базы |
 | `POSTGRES_PORT` | `5432` | Порт PostgreSQL на хосте |
 | `APP_PORT` | `8000` | Порт API на хосте |
-| `RABBITMQ_USER` | `nextoffer` | Пользователь RabbitMQ |
-| `RABBITMQ_PASSWORD` | `nextoffer` | Пароль RabbitMQ |
+| `RABBITMQ_USER` | `next_offer` | Пользователь RabbitMQ |
+| `RABBITMQ_PASSWORD` | `change_me` | Пароль RabbitMQ |
 | `RABBITMQ_PORT` | `5672` | AMQP-порт на хосте |
 | `RABBITMQ_MANAGEMENT_PORT` | `15672` | Порт management UI на хосте |
 | `FRONTEND_PORT` | `5173` | Порт UI (Vite dev server) на хосте |
@@ -196,7 +196,7 @@ PostgreSQL (рекомендуется перед релизом), задайт�
 база должна быть пустой и доступной, схема создаётся/удаляется на каждом тесте:
 
 ```bash
-export TEST_DATABASE_URL=postgresql+psycopg://rozochka:rozochka@localhost:5432/rozochka_test
+export TEST_DATABASE_URL=postgresql+psycopg://next_offer:change_me@localhost:5432/next_offer_test
 pytest
 ```
 
@@ -245,7 +245,7 @@ npm run build   # tsc --noEmit + vite build
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-export DATABASE_URL=postgresql+psycopg://rozochka:rozochka@localhost:5432/rozochka
+export DATABASE_URL=postgresql+psycopg://next_offer:change_me@localhost:5432/next_offer
 export RABBITMQ_URL=amqp://nextoffer:nextoffer@localhost:5672/
 uvicorn app.main:app --reload
 # в другом терминале:
