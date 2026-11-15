@@ -96,8 +96,12 @@ def get_client_offers(
         OfferOut(
             id=offer.id,
             type=template.type,
-            title=template.title,
-            subtitle=template.subtitle,
+            title=offer.title or template.title,
+            subtitle=(
+                offer.subtitle
+                if offer.subtitle is not None
+                else template.subtitle
+            ),
             background_color=template.background_color,
             icon=template.icon,
             action_text=template.action_text,

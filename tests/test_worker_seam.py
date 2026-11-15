@@ -1,5 +1,6 @@
 import pytest
 
+from app.llm import OfferText
 from app.models import BannerTemplate, Client, Offer
 from app.services.offers import handle_event
 
@@ -137,3 +138,74 @@ def test_worker_maps_event_type_to_matching_banner_template(
     template = session.get(BannerTemplate, offer.banner_template_id)
     assert template is not None
     assert template.type == event_type
+
+
+class FakeTextGenerator:
+    def __init__(self, text: OfferText | None) -> None:
+        self.text = text
+        self.calls = 0
+
+    def generate(self, context):
+        self.calls += 1
+        return self.text
+
+
+def test_worker_stores_generated_offer_text(session, seeded):
+    generator = FakeTextGenerator(OfferText("Премия под 8%", "Отложите часть дохода"))
+
+    offer = handle_event(
+        salary_event(seeded["client_id"], "evt-generated"),
+        session,
+        text_generator=generator,
+    )
+
+    assert offer is not None
+    assert generator.calls == 1
+    assert offer.title == "Премия под 8%"
+    assert offer.subtitle == "Отложите часть дохода"
+    assert offer.message_text == "Премия под 8%"
+
+
+def test_worker_falls_back_to_template_when_generation_fails(session, seeded):
+    template = session.get(BannerTemplate, seeded["banner_template_id"])
+    generator = FakeTextGenerator(None)
+
+    offer = handle_event(
+        salary_event(seeded["client_id"], "evt-fallback"),
+        session,
+        text_generator=generator,
+    )
+
+    assert offer is not None
+    assert offer.title == template.title
+    assert offer.subtitle == template.subtitle
+
+
+class RecordingTextGenerator:
+    def __init__(self) -> None:
+        self.contexts = []
+
+    def generate(self, context):
+        self.contexts.append(context)
+        index = len(self.contexts)
+        return OfferText(f"Заголовок {index}", f"Подзаголовок {index}")
+
+
+def test_worker_passes_previous_titles_to_next_generation(session, seeded):
+    generator = RecordingTextGenerator()
+
+    first = handle_event(
+        salary_event(seeded["client_id"], "evt-repeat-1"),
+        session,
+        text_generator=generator,
+    )
+    second = handle_event(
+        salary_event(seeded["client_id"], "evt-repeat-2"),
+        session,
+        text_generator=generator,
+    )
+
+    assert first is not None and second is not None
+    assert generator.contexts[0].recent_titles == ()
+    assert generator.contexts[1].recent_titles == ("Заголовок 1",)
+    assert generator.contexts[1].style_hint

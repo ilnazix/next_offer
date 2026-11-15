@@ -1,4 +1,5 @@
 import logging
+import random
 from typing import Any
 
 from sqlalchemy import select
@@ -6,7 +7,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.constants import EventType, OfferStatus
-from app.models import BannerTemplate, Client, Offer
+from app.llm import (
+    OfferContext,
+    OfferTextGenerator,
+    build_text_generator,
+    describe_event,
+)
+from app.models import BannerTemplate, Client, Offer, Product
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +24,15 @@ EVENT_TYPE_TO_BANNER_TYPE = {
     EventType.DEPOSIT_VIEW.value: "deposit_view",
     EventType.HIGH_BALANCE.value: "high_balance",
 }
+
+STYLE_HINTS = (
+    "выгода в процентах",
+    "простота оформления онлайн",
+    "сохранность и безопасность средств",
+    "конкретная сумма на счёте",
+    "цель: ремонт, отпуск или крупная покупка",
+    "ежемесячная капитализация",
+)
 
 
 def banner_type_for_event(event_type: str | None) -> str | None:
@@ -30,7 +46,11 @@ def is_client_eligible(client: Client) -> bool:
     )
 
 
-def handle_event(message: dict[str, Any], db: Session) -> Offer | None:
+def handle_event(
+    message: dict[str, Any],
+    db: Session,
+    text_generator: OfferTextGenerator | None = None,
+) -> Offer | None:
     event_id = message.get("event_id")
     if not event_id:
         logger.warning("Skipping event without event_id: %s", message)
@@ -62,6 +82,56 @@ def handle_event(message: dict[str, Any], db: Session) -> Offer | None:
         logger.info("Client %s is not eligible for offer on event %s", client.id, event_id)
         return None
 
+    product = db.get(Product, template.product_id)
+    event_type = str(message.get("event_type"))
+    payload = message.get("payload")
+    recent_titles = tuple(
+        title
+        for title in db.scalars(
+            select(Offer.title)
+            .where(
+                Offer.client_id == client.id,
+                Offer.trigger_type == event_type,
+                Offer.title.is_not(None),
+            )
+            .order_by(Offer.created_at.desc(), Offer.id.desc())
+            .limit(5)
+        ).all()
+        if title
+    )
+    context = OfferContext(
+        event_type=event_type,
+        event_description=describe_event(event_type),
+        client_segment=client.segment,
+        product_name=product.name if product else template.title,
+        product_rate=(
+            f"{product.annual_rate:g}"
+            if product is not None and product.annual_rate is not None
+            else None
+        ),
+        product_min_amount=(
+            str(product.min_amount)
+            if product is not None and product.min_amount is not None
+            else None
+        ),
+        product_term_months=product.term_months if product is not None else None,
+        event_details=payload if isinstance(payload, dict) else {},
+        template_title=template.title,
+        template_subtitle=template.subtitle,
+        recent_titles=recent_titles,
+        style_hint=random.choice(STYLE_HINTS),
+    )
+
+    generator = text_generator or build_text_generator()
+    try:
+        generated = generator.generate(context)
+    except Exception:
+        logger.exception("Offer text generation failed for event %s", event_id)
+        generated = None
+
+    title = generated.title if generated else template.title
+    subtitle = generated.subtitle if generated else template.subtitle
+
     offer = Offer(
         client_id=client.id,
         product_id=template.product_id,
@@ -69,7 +139,9 @@ def handle_event(message: dict[str, Any], db: Session) -> Offer | None:
         event_id=event_id,
         trigger_type=message.get("event_type"),
         trigger_payload=message.get("payload"),
-        message_text=template.title,
+        message_text=title,
+        title=title,
+        subtitle=subtitle,
         status=OfferStatus.PENDING.value,
     )
     db.add(offer)

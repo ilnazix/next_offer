@@ -31,17 +31,21 @@ Authorization: Api-Key <API_KEY>        # либо: Bearer <IAM_TOKEN>
 }
 ```
 
-Ответ (сокращённо):
+Ответ (сокращённо; реальный REST-ответ оборачивает полезную нагрузку в `result`):
 
 ```json
 {
-  "alternatives": [
-    { "message": { "role": "assistant", "text": "..." }, "status": "ALTERNATIVE_STATUS_FINAL" }
-  ],
-  "usage": { "inputTextTokens": "...", "completionTokens": "...", "totalTokens": "..." },
-  "modelVersion": "..."
+  "result": {
+    "alternatives": [
+      { "message": { "role": "assistant", "text": "..." }, "status": "ALTERNATIVE_STATUS_FINAL" }
+    ],
+    "usage": { "inputTextTokens": "14", "completionTokens": "2", "totalTokens": "16" },
+    "modelVersion": "09.02.2025"
+  }
 }
 ```
+
+Важно: парсить `alternatives` нужно из `data["result"]`, а не из корня ответа.
 
 ## Ключевые факты
 

@@ -75,6 +75,8 @@ CREATE TABLE IF NOT EXISTS offers (
     trigger_type VARCHAR(128) NOT NULL,
     trigger_payload JSONB,
     message_text TEXT,
+    title VARCHAR(255),
+    subtitle TEXT,
     status VARCHAR(32) DEFAULT 'pending' CHECK (status IN ('pending', 'shown', 'accepted', 'declined', 'dismissed')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     shown_at TIMESTAMP,
@@ -84,6 +86,8 @@ CREATE TABLE IF NOT EXISTS offers (
 -- Additive migration for databases created before banner templates existed.
 ALTER TABLE offers ADD COLUMN IF NOT EXISTS banner_template_id INT REFERENCES banner_templates(id);
 ALTER TABLE offers ADD COLUMN IF NOT EXISTS event_id VARCHAR(64) UNIQUE;
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS title VARCHAR(255);
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS subtitle TEXT;
 ALTER TABLE offers DROP CONSTRAINT IF EXISTS offers_status_check;
 ALTER TABLE offers ADD CONSTRAINT offers_status_check
     CHECK (status IN ('pending', 'shown', 'accepted', 'declined', 'dismissed'));

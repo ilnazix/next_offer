@@ -140,6 +140,22 @@ Backend и инфраструктура (см. `.env.example`):
 | `WORKER_HEARTBEAT_PATH` | `/tmp/next_offer_worker_heartbeat` | Файл heartbeat worker'а для healthcheck |
 | `WORKER_HEARTBEAT_MAX_AGE_SECONDS` | `20` | Допустимый возраст heartbeat |
 
+Yandex AI Studio / YandexGPT (опционально):
+
+| Переменная | По умолчанию | Назначение |
+| --- | --- | --- |
+| `LLM_ENABLED` | `false` | Генерировать текст оффера через LLM |
+| `YANDEX_API_KEY` | — | API-ключ сервисного аккаунта |
+| `YANDEX_FOLDER_ID` | — | Каталог Yandex Cloud |
+| `YANDEX_MODEL` | `yandexgpt-lite` | Модель |
+| `YANDEX_MODEL_VERSION` | `latest` | Версия модели |
+| `YANDEX_MODEL_URI` | — | Полный `gpt://...` override (перекрывает model/version) |
+| `YANDEX_TIMEOUT_SECONDS` | `10` | Таймаут запроса |
+| `YANDEX_TEMPERATURE` | `0.7` | Температура генерации |
+| `YANDEX_MAX_TOKENS` | `200` | Лимит токенов ответа |
+
+При `LLM_ENABLED=false` или ошибке LLM worker использует текст из `banner_templates`.
+
 Frontend (см. `frontend/.env.example`):
 
 | Переменная | По умолчанию | Назначение |

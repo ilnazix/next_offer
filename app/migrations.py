@@ -26,6 +26,8 @@ BANNER_TEMPLATES_TABLE = "banner_templates"
 ADDITIVE_OFFER_COLUMNS = (
     "banner_template_id",
     "event_id",
+    "title",
+    "subtitle",
     "shown_at",
     "responded_at",
 )
