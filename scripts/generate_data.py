@@ -1,5 +1,5 @@
 """
-Generator for synthetic Rozochka test data.
+Generator for synthetic next_offer test data.
 
 Usage (inside container or local venv):
     python scripts/generate_data.py --clients 100 --transactions 1000
@@ -17,7 +17,7 @@ def parse_args():
     parser.add_argument(
         "--database-url",
         default=os.getenv(
-            "DATABASE_URL", "postgresql+psycopg://rozochka:rozochka@localhost:5432/rozochka"
+            "DATABASE_URL", "postgresql+psycopg://next_offer:change_me@localhost:5432/next_offer"
         ),
     )
     return parser.parse_args()

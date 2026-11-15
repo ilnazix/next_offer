@@ -3,19 +3,38 @@ services:
     image: postgres:15-alpine
     container_name: nextoffer-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-rozochka}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rozochka}
-      POSTGRES_DB: ${POSTGRES_DB:-rozochka}
+      POSTGRES_USER: ${POSTGRES_USER:-next_offer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-next_offer}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rozochka} -d ${POSTGRES_DB:-rozochka}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-next_offer} -d ${POSTGRES_DB:-next_offer}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: nextoffer-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-next_offer}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-change_me}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   app:
     build:
@@ -23,7 +42,9 @@ services:
       dockerfile: Dockerfile
     container_name: nextoffer-app
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rozochka}:${POSTGRES_PASSWORD:-rozochka}@postgres:5432/${POSTGRES_DB:-rozochka}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-next_offer}:${POSTGRES_PASSWORD:-change_me}@postgres:5432/${POSTGRES_DB:-next_offer}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-next_offer}:${RABBITMQ_PASSWORD:-change_me}@rabbitmq:5672/
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:5173","http://127.0.0.1:5173"]}'
       UVICORN_HOST: 0.0.0.0
       UVICORN_PORT: 8000
     ports:
@@ -34,7 +55,66 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/app_healthcheck.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextoffer-worker
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-next_offer}:${POSTGRES_PASSWORD:-change_me}@postgres:5432/${POSTGRES_DB:-next_offer}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-next_offer}:${RABBITMQ_PASSWORD:-change_me}@rabbitmq:5672/
+      PYTHONUNBUFFERED: "1"
+      WORKER_HEARTBEAT_PATH: /tmp/next_offer_worker_heartbeat
+      WORKER_HEARTBEAT_MAX_AGE_SECONDS: "20"
+      LLM_ENABLED: ${LLM_ENABLED:-false}
+      YANDEX_API_KEY: ${YANDEX_API_KEY:-}
+      YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID:-}
+      YANDEX_MODEL: ${YANDEX_MODEL:-yandexgpt-lite}
+      YANDEX_MODEL_VERSION: ${YANDEX_MODEL_VERSION:-latest}
+      YANDEX_MODEL_URI: ${YANDEX_MODEL_URI:-}
+      YANDEX_TIMEOUT_SECONDS: ${YANDEX_TIMEOUT_SECONDS:-15}
+      YANDEX_TEMPERATURE: ${YANDEX_TEMPERATURE:-0.3}
+      YANDEX_MAX_TOKENS: ${YANDEX_MAX_TOKENS:-220}
+    volumes:
+      - ./app:/app/app:ro
+      - ./scripts:/app/scripts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/worker_healthcheck.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    command: python -m app.worker
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nextoffer-frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+      VITE_CLIENT_ID: ${VITE_CLIENT_ID:-1}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      app:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  rabbitmq_data:
